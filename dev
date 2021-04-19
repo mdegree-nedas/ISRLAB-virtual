@@ -1,0 +1,66 @@
+#!/bin/bash
+
+sub=subscriber
+sim=simulator
+pub=publisher
+
+sws=/src/subscriber
+mws=/src/simulator
+pws=/src/publisher
+
+rws=/root/workspace
+
+img=isrlab/ros2_dashing:turtlebot3
+sig=isrlab/ros2_dashing:gzweb_m
+
+prt="8080:8080"
+
+net=rosnet
+shell=zsh
+
+if [ $1 == "v" ]; then
+
+    ws=$HOME/code/isrlab/virtual_robotics
+    terminal=st
+    docker_cmd=docker
+    sleep_time=5
+
+elif [ $1 == "r" ]; then
+
+    ws=/home/riccardo/Documenti/GitLab/virtual_robotics
+    #terminal=konsole
+    terminal=xterm
+    docker_cmd=docker
+    sleep_time=15
+
+fi
+
+$docker_cmd container rm -f $sub $sim $pub
+$docker_cmd network rm $net
+
+$docker_cmd network create $net
+echo
+
+# subscriber
+(&>/dev/null $terminal -e $shell -c \
+    "$docker_cmd run -it --net $net --rm -v $ws$sws:$rws --name $sub --workdir $rws $img") &
+# simulator
+(&>/dev/null $terminal -e $shell -c \
+    "$docker_cmd run -it --net $net --rm -v $ws$mws:$rws -p $prt --name $sim --workdir $rws $sig") &
+# publisher
+(&>/dev/null $terminal -e $shell -c \
+    "$docker_cmd run -it --net $net --rm -v $ws$pws:$rws --name $pub --workdir $rws $img") &
+
+sleep $sleep_time
+
+# subscriber ip redirect
+echo $sub"_ip="$(docker inspect \
+    -f '{{ .NetworkSettings.Networks.'$net'.IPAddress }}' $sub) > ./src/$sub/ip
+# simulator ip redirect
+echo $sim"_ip="$(docker inspect \
+    -f '{{ .NetworkSettings.Networks.'$net'.IPAddress }}' $sim) > ./src/$sim/ip
+echo $sub"_ip="$(docker inspect \
+    -f '{{ .NetworkSettings.Networks.'$net'.IPAddress }}' $sub) >> ./src/$sim/ip
+# publisher ip redirect
+echo $pub"_ip="$(docker inspect \
+    -f '{{ .NetworkSettings.Networks.'$net'.IPAddress }}' $pub) > ./src/$pub/ip

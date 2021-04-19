@@ -1,0 +1,22 @@
+version: '3'
+services:
+    publisher:
+        build: ./init/publisher
+        volumes:
+            - ./src/publisher:/root/workspace
+        depends_on:
+            - subscriber
+            - simulator
+
+    subscriber:
+        build: ./init/subscriber
+        volumes:
+            - ./src/subscriber:/root/workspace
+
+    simulator:
+        build: ./init/simulator
+        ports:
+            - "7681:7681"
+            - "8080:8080"
+        depends_on:
+            - subscriber
