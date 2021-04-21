@@ -1,0 +1,39 @@
+- ROS2 Dashing full environment image creation:
+	- docker pull ros:dashing
+
+	- docker run -it ros:dashing
+		- (follow ROS2 full environment install when you are inside the container)
+		- (When you complete the install, exit the container without removing it)
+
+	- docker login
+
+	- docker commit <ros2_container_id> isrlab/ros2_dashing:full
+
+	- docker push isrlab/ros2_dashing:full
+
+
+- ROS2 full environment install (inside Docker container):
+	- sudo apt update && sudo apt install locales
+
+	- sudo locale-gen en_US en_US.UTF-8
+
+	- sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+
+	- export LANG=en_US.UTF-8
+
+	- sudo apt update && sudo apt install curl gnupg2 lsb-release
+
+	- sudo apt update
+
+	- sudo apt install ros-dashing-desktop
+
+	- source /opt/ros/dashing/setup.bash
+
+	- sudo apt install -y python3-pip
+
+	- pip3 install -U argcomplete
+
+	- Test installation:
+		- ros2 run demo_nodes_cpp talker
+
+		- ros2 run demo_nodes_py listener

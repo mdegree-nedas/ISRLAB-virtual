@@ -1,0 +1,41 @@
+ROS2 Packages (quick overview):
+	- publisher:
+		This package contains the Turtlebot3's library and the planner.
+		Structure:
+			-/
+			 |
+			 |_ libplanner:
+			 |  |_ planner.py: this Python file contains all the planner's logic. It contains a Python class (Planner) that guide the simulated Turtlebot3, whom wanders around, throughrout the maze without bumping into obstacles.
+		 	 |
+			 |
+			 |_ libturtlebot3:
+			 |	|_ common.py: this Python file contains some important global variables for the robot.
+		     |  |
+			 |	|_ movement.py: this Python file contains basic movements for the robot (go forward, go back, turn right, turn left, stop).
+			 |	|
+			 |	|_ turtlebot3.py: this Python file contains a container class for logger, movement and sensor.
+			 |	|
+			 |	|_ logger.py: this Python file contains a logger class.
+			 |	|
+			 |	|_ sensor.py: this Python file contains the logic used to get the data from the laserscan sensor. We have a 360 grades view divided into multiple sections (front, back, left, right, front left, front right, back left, back right)
+			 |
+			 |_ main.py: this Python file is the main file (the access point). It starts the planner
+
+
+	- subscriber:
+		This package constructs and runs the virtual environment for the simulation.
+		Structure:
+			-/
+			 |
+			 |_ launch: this folder contains the launch file that starts gzserver given the correct .world file and mounts the robot's topics.
+			 | 
+			 |_worlds: this folder contains a .world file in which we call the robot and the maze models.
+			 |
+			 |_ models: 
+				|
+				|_ maze_1: contains the maze model that we load into the .world file located in the worlds folder.
+
+
+	- simulator:
+		This package contains the gzweb tool.
+		This package has the task to connect to che Gazebo master uri (the gzserver instance that runs in our subscriber container) and start the simulation (accessibile at port 8080 in the browser's host)
