@@ -20,7 +20,7 @@ shell=zsh
 
 if [ $1 == "v" ]; then
 
-    ws=$HOME/code/isrlab/virtual_robotics
+    ws=$HOME/code/intelligent_systems_and_robotics_lab-virtual-proj
     terminal=st
     docker_cmd=docker
     sleep_time=5
