@@ -21,7 +21,7 @@ user@dockerslave:~$ pip3 install -U argcomplete
 ```
 
 ###### test (inside ros:dashing container)
-```
+```console
 user@dockerslave:~$ ros2 run demo_nodes_cpp talker &
 user@dockerslave:~$ ros2 run demo_nodes_py listener
 user@dockerslave:~$ exit
@@ -29,7 +29,7 @@ user@dockerslave:~$ exit
 
 ###### ros2 dashing full env image build (part 2)
 
-```
+```console
 user@host:~$ docker login
 user@host:~$ docker commit <ros2_container_id> isrlab/ros2_dashing:full
 user@host:~$ docker push isrlab/ros2_dashing:full
