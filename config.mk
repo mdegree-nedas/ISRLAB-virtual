@@ -7,6 +7,8 @@ PUBLISHER_IMAGE ?= virtual_robotics_publisher
 SIMULATOR_IMAGE ?= virtual_robotics_simulator
 
 # debug vars
+# [!] set your own
+
 DEBUG_SUBSCRIBER ?= subscriber
 DEBUG_SIMULATOR ?= simulator
 DEBUG_PUBLISHER ?= publisher

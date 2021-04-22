@@ -75,4 +75,19 @@ debug:
 	# publisher ip redirect
 	echo $(DEBUG_PUBLISHER)"_ip="$(shell $(DEBUG_DOCKER_CMD) inspect -f '{{ .NetworkSettings.Networks.'$(DEBUG_NETWORK)'.IPAddress }}' $(DEBUG_PUBLISHER)) > ./src/$(DEBUG_PUBLISHER)/ip
 
-.PHONY: default up clean down debug
+help:
+	echo "MACROS: "
+	echo " * {DEFAULT} : help"
+	echo
+	echo " * {all}     : rm up"
+	echo " * {rm}      : down clean"
+	echo
+	echo "RULES: "
+	echo " - up        : docker-compose env up"
+	echo " - down      : docker-compose env clean"
+	echo " - clean     : workspace env clean"
+	echo " - debug     : debug env start"
+	echo "             : [!] set debug vars in config.mk"
+	echo " - help      : print this help message"
+
+.PHONY: up clean down debug help
