@@ -1,37 +1,35 @@
 .POSIX:
 
-MAKEFLAGS+=s
+include config.mk
 
-OS=$(shell uname -s)
+.DEFAULT_GOAL := help
 
-ifndef SUBSCRIBER
-	SUBSCRIBER=./src/subscriber
-endif
-ifndef PUBLISHER
-	PUBLISHER=./src/publisher
-endif
+all: rm up
+rm: down clean
 
-ifndef SUBSCRIBER_IMAGE
-	SUBSCRIBER_IMAGE=virtual_robotics_subscriber
-endif
-ifndef PUBLISHER_IMAGE
-	PUBLISHER_IMAGE=virtual_robotics_publisher
-endif
-ifndef SIMULATOR_IMAGE
-	SIMULATOR_IMAGE=virtual_robotics_simulator
-endif
-
-.DEFAULT_GOAL := default
-
-default: | rm up
-rm: | down clean
-v: | rm dev_v
-r: | rm dev_r
-
+.SILENT:
 up:
 	command -V docker-compose || exit 1
 	sudo docker-compose up
 
+.SILENT:
+down:
+	command -V docker >/dev/null || exit 1 
+	echo "PRUNE all docker env objects"
+	sudo docker system prune -f
+	echo "RM $(SUBSCRIBER_IMAGE):latest docker image"
+	sudo docker image ls | grep -i "$(SUBSCRIBER_IMAGE)" && \
+		sudo docker rmi $(SUBSCRIBER_IMAGE):latest || \
+		echo "image $(SUBSCRIBER_IMAGE):latest not found"
+	echo "RM $(PUBLISHER_IMAGE):latest docker image"
+	sudo docker image ls | grep -i "$(PUBLISHER_IMAGE)" && \
+		sudo docker rmi $(PUBLISHER_IMAGE):latest || \
+		echo "image $(PUBLISHER_IMAGE):latest not found"
+	sudo docker image ls | grep -i "$(SIMULATOR_IMAGE)" && \
+		sudo docker rmi $(SIMULATOR_IMAGE):latest || \
+		echo "image $(SIMULATOR_IMAGE):latest not found"
+
+.SILENT:
 clean:
 	if [ -d "$(PUBLISHER)/log" ]; then \
 		sudo rm -rf "$(PUBLISHER)/log"; \
@@ -58,26 +56,23 @@ clean:
 	fi
 	echo "DIR $(SUBSCRIBER)/build removed"
 
-down:
-	command -V docker >/dev/null || exit 1 
-	echo "PRUNE all docker env objects"
-	sudo docker system prune -f
-	echo "RM $(SUBSCRIBER_IMAGE):latest docker image"
-	sudo docker image ls | grep -i "$(SUBSCRIBER_IMAGE)" && \
-		sudo docker rmi $(SUBSCRIBER_IMAGE):latest || \
-		echo "image $(SUBSCRIBER_IMAGE):latest not found"
-	echo "RM $(PUBLISHER_IMAGE):latest docker image"
-	sudo docker image ls | grep -i "$(PUBLISHER_IMAGE)" && \
-		sudo docker rmi $(PUBLISHER_IMAGE):latest || \
-		echo "image $(PUBLISHER_IMAGE):latest not found"
-	sudo docker image ls | grep -i "$(SIMULATOR_IMAGE)" && \
-		sudo docker rmi $(SIMULATOR_IMAGE):latest || \
-		echo "image $(SIMULATOR_IMAGE):latest not found"
+.SILENT:
+debug:
+	$(DEBUG_DOCKER_CMD) container rm -f $(DEBUG_SUBSCRIBER) $(DEBUG_SIMULATOR) $(DEBUG_PUBLISHER)
+	$(DEBUG_DOCKER_CMD) network rm $(DEBUG_NETWORK) || true
+	$(DEBUG_DOCKER_CMD) network create $(DEBUG_NETWORK)
+	# subscriber
+	$(shell (shell &>/dev/null $(DEBUG_TERMINAL) -e $(DEBUG_SHELL) -c "sleep $(DEBUG_SLEEP_TIME); $(DEBUG_DOCKER_CMD) run -it --net $(DEBUG_NETWORK) --rm -v $(DEBUG_HOST_REPO)$(DEBUG_SUBSCRIBER_WORKSPACE):$(DEBUG_ROOT_WORKSPACE) --name $(DEBUG_SUBSCRIBER) --workdir $(DEBUG_ROOT_WORKSPACE) $(DEBUG_TURTLEBOT3_IMAGE)") &)
+	# simulator
+	$(shell (shell &>/dev/null $(DEBUG_TERMINAL) -e $(DEBUG_SHELL) -c "sleep $(DEBUG_SLEEP_TIME); $(DEBUG_DOCKER_CMD) run -it --net $(DEBUG_NETWORK) --rm -v $(DEBUG_HOST_REPO)$(DEBUG_SIMULATOR_WORKSPACE):$(DEBUG_ROOT_WORKSPACE) -p $(DEBUG_PORT) --name $(DEBUG_SIMULATOR) --workdir $(DEBUG_ROOT_WORKSPACE) $(DEBUG_SIMULATOR_IMAGE)") &)
+	# publisher
+	$(shell (shell &>/dev/null $(DEBUG_TERMINAL) -e $(DEBUG_SHELL) -c "sleep $(DEBUG_SLEEP_TIME); $(DEBUG_DOCKER_CMD) run -it --net $(DEBUG_NETWORK) --rm -v $(DEBUG_HOST_REPO)$(DEBUG_PUBLISHER_WORKSPACE):$(DEBUG_ROOT_WORKSPACE) --name $(DEBUG_PUBLISHER) --workdir $(DEBUG_ROOT_WORKSPACE) $(DEBUG_TURTLEBOT3_IMAGE)") &)
+	# subscriber ip redirect
+	echo $(DEBUG_SUBSCRIBER)"_ip="$(shell $(DEBUG_DOCKER_CMD) inspect -f '{{ .NetworkSettings.Networks.'$(DEBUG_NETWORK)'.IPAddress }}' $(DEBUG_SUBSCRIBER)) > ./src/$(DEBUG_SUBSCRIBER)/ip
+	# simulator ip redirect
+	echo $(DEBUG_SIMULATOR)"_ip="$(shell $(DEBUG_DOCKER_CMD) inspect -f '{{ .NetworkSettings.Networks.'$(DEBUG_NETWORK)'.IPAddress }}' $(DEBUG_SIMULATOR)) > ./src/$(DEBUG_SIMULATOR)/ip
+	echo $(DEBUG_SUBSCRIBER)"_ip="$(shell $(DEBUG_DOCKER_CMD) inspect -f '{{ .NetworkSettings.Networks.'$(DEBUG_NETWORK)'.IPAddress }}' $(DEBUG_SUBSCRIBER)) >> ./src/$(DEBUG_SIMULATOR)/ip
+	# publisher ip redirect
+	echo $(DEBUG_PUBLISHER)"_ip="$(shell $(DEBUG_DOCKER_CMD) inspect -f '{{ .NetworkSettings.Networks.'$(DEBUG_NETWORK)'.IPAddress }}' $(DEBUG_PUBLISHER)) > ./src/$(DEBUG_PUBLISHER)/ip
 
-dev_v: dev
-	./dev v
-
-dev_r: dev
-	./dev r
-
-.PHONY: default up clean down v r
+.PHONY: default up clean down debug
