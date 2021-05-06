@@ -4,15 +4,33 @@ include config.mk
 
 .DEFAULT_GOAL := help
 
+.PHONY: all # ----- (combo)[ros] build all
+.PHONY: rm # ----- (combo)[ros] rm all
+
 all: rm up
 rm: down clean
 
+# --------------------------------------------------
+# HELP
+
 .SILENT:
+.PHONY: help # [make] print this help text
+help:
+	@grep '^.PHONY: .* #' $(firstword $(MAKEFILE_LIST)) |\
+		sed 's/\.PHONY: \(.*\) # \(.*\)/\1 # \2/' |\
+		awk 'BEGIN {FS = "#"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' 
+
+# --------------------------------------------------
+# ROS RULES
+
+.SILENT:
+.PHONY: up # [ros] docker-compose up
 up:
 	command -V docker-compose || exit 1
 	sudo docker-compose up
 
 .SILENT:
+.PHONY: down # [ros] docker-compose env clean and system prune
 down:
 	command -V docker >/dev/null || exit 1 
 	echo "PRUNE all docker env objects"
@@ -30,6 +48,7 @@ down:
 		echo "image $(SIMULATOR_IMAGE):latest not found"
 
 .SILENT:
+.PHONY: clean # [ros] ros packages env clean
 clean:
 	if [ -d "$(PUBLISHER)/log" ]; then \
 		sudo rm -rf "$(PUBLISHER)/log"; \
@@ -57,6 +76,7 @@ clean:
 	echo "DIR $(SUBSCRIBER)/build removed"
 
 .SILENT:
+.PHONY: debug # [debug] start docker debug env (set your own variables in config.mk)
 debug:
 	$(DEBUG_DOCKER_CMD) container rm -f $(DEBUG_SUBSCRIBER) $(DEBUG_SIMULATOR) $(DEBUG_PUBLISHER)
 	$(DEBUG_DOCKER_CMD) network rm $(DEBUG_NETWORK) || true
@@ -74,20 +94,3 @@ debug:
 	echo $(DEBUG_SUBSCRIBER)"_ip="$(shell $(DEBUG_DOCKER_CMD) inspect -f '{{ .NetworkSettings.Networks.'$(DEBUG_NETWORK)'.IPAddress }}' $(DEBUG_SUBSCRIBER)) >> ./src/$(DEBUG_SIMULATOR)/ip
 	# publisher ip redirect
 	echo $(DEBUG_PUBLISHER)"_ip="$(shell $(DEBUG_DOCKER_CMD) inspect -f '{{ .NetworkSettings.Networks.'$(DEBUG_NETWORK)'.IPAddress }}' $(DEBUG_PUBLISHER)) > ./src/$(DEBUG_PUBLISHER)/ip
-
-help:
-	echo "MACROS: "
-	echo " * {DEFAULT} : help"
-	echo
-	echo " * {all}     : rm up"
-	echo " * {rm}      : down clean"
-	echo
-	echo "RULES: "
-	echo " - up        : docker-compose env up"
-	echo " - down      : docker-compose env clean"
-	echo " - clean     : workspace env clean"
-	echo " - debug     : debug env start"
-	echo "             : [!] set debug vars in config.mk"
-	echo " - help      : print this help message"
-
-.PHONY: up clean down debug help
